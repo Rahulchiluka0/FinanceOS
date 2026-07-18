@@ -1,0 +1,289 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String   @id @default(cuid())
+  name               String
+  email              String   @unique
+  passwordHash       String
+  avatarUrl          String?
+  currency           String   @default("INR")
+  timezone           String   @default("Asia/Kolkata")
+  dateFormat         String   @default("DD/MM/YYYY")
+  theme              String   @default("light")
+  notificationPrefs  String   @default("{}")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  accounts      Account[]
+  categories    Category[]
+  transactions  Transaction[]
+  tags          Tag[]
+  budgets       Budget[]
+  goals         Goal[]
+  recurring     RecurringRule[]
+  bills         Bill[]
+  subscriptions Subscription[]
+  loans         Loan[]
+  investments   Investment[]
+  notifications Notification[]
+  passwordResets PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id             String   @id @default(cuid())
+  userId         String
+  name           String
+  type           String
+  currency       String   @default("INR")
+  openingBalance Float    @default(0)
+  balance        Float    @default(0)
+  color          String   @default("#1A56DB")
+  icon           String?
+  archived       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions      Transaction[]  @relation("TxAccount")
+  transferIns       Transaction[]  @relation("TxToAccount")
+  bills             Bill[]
+  recurringRules    RecurringRule[]
+
+  @@index([userId])
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  type      String
+  parentId  String?
+  color     String   @default("#1A56DB")
+  icon      String   @default("Tag")
+  archived  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent       Category?     @relation("CategoryTree", fields: [parentId], references: [id])
+  children     Category[]    @relation("CategoryTree")
+  transactions Transaction[]
+  budgets      Budget[]
+  recurring    RecurringRule[]
+
+  @@index([userId])
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  color     String   @default("#1A56DB")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions TransactionTag[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Transaction {
+  id           String   @id @default(cuid())
+  userId       String
+  accountId    String
+  toAccountId  String?
+  categoryId   String?
+  type         String
+  title        String
+  amount       Float
+  date         DateTime
+  notes        String?
+  favorite     Boolean  @default(false)
+  receiptUrl   String?
+  recurringId  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account    Account          @relation("TxAccount", fields: [accountId], references: [id])
+  toAccount  Account?         @relation("TxToAccount", fields: [toAccountId], references: [id])
+  category   Category?        @relation(fields: [categoryId], references: [id])
+  recurring  RecurringRule?   @relation(fields: [recurringId], references: [id])
+  tags       TransactionTag[]
+
+  @@index([userId])
+  @@index([userId, date])
+  @@index([accountId])
+}
+
+model TransactionTag {
+  transactionId String
+  tagId         String
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  tag         Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([transactionId, tagId])
+}
+
+model Budget {
+  id        String   @id @default(cuid())
+  userId    String
+  categoryId String
+  period    String   @default("monthly")
+  limitAmount Float
+  alertAt   Int      @default(80)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@index([userId])
+}
+
+model Goal {
+  id            String   @id @default(cuid())
+  userId        String
+  name          String
+  targetAmount  Float
+  currentAmount Float    @default(0)
+  deadline      DateTime?
+  color         String   @default("#1A56DB")
+  completed     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model RecurringRule {
+  id         String   @id @default(cuid())
+  userId     String
+  title      String
+  type       String
+  amount     Float
+  accountId  String?
+  categoryId String?
+  frequency  String   @default("monthly")
+  nextDate   DateTime
+  status     String   @default("active")
+  endDate    DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account      Account?      @relation(fields: [accountId], references: [id])
+  category     Category?     @relation(fields: [categoryId], references: [id])
+  transactions Transaction[]
+
+  @@index([userId])
+  @@index([status, nextDate])
+}
+
+model Bill {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  category  String
+  amount    Float
+  dueDate   DateTime
+  status    String   @default("unpaid")
+  accountId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account Account? @relation(fields: [accountId], references: [id])
+
+  @@index([userId])
+}
+
+model Subscription {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  amount      Float
+  cycle       String   @default("monthly")
+  nextRenewal DateTime
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Loan {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  principal    Float
+  remaining    Float
+  interestRate Float
+  emi          Float
+  nextDue      DateTime?
+  tenureMonths Int
+  paidMonths   Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Investment {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  type         String
+  invested     Float
+  currentValue Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  meta      String   @default("{}")
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+}
