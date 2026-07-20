@@ -72,7 +72,7 @@
 | Validation | Zod or Joi | Align request bodies with frontend forms |
 | Jobs | node-cron or BullMQ | Recurring tx, bill/subscription reminders |
 | Files | Local/`uploads` or S3 | Receipts, import files, backups |
-| AI (v2) | Provider adapter (OpenAI/etc.) behind interface | Swap without touching routes |
+| AI (v2) | Provider adapter (Gemini default; interface for swap) | Swap without touching routes |
 
 **Alternative for faster local start:** SQLite (`better-sqlite3` / Prisma SQLite) — same schema, zero Docker. Migrate to Postgres later.
 

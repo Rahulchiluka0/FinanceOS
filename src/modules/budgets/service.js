@@ -1,6 +1,8 @@
 import { AppError } from '../../utils/response.js'
 import { db } from '../../lib/prisma.js'
 import { checkBudgetAlerts } from './alerts.js'
+import { markTwinStale } from '../ai/twin/invalidate.js'
+import { scheduleCoachEvaluate } from '../ai/coach/schedule.js'
 import { budgetsRepository } from './repository.js'
 
 async function mapBudget(userId, b, { capitalizePeriod = false } = {}) {
@@ -39,6 +41,8 @@ export const budgetsService = {
     })
     // Existing spend may already be over the new threshold
     await checkBudgetAlerts(userId, budget.categoryId).catch(() => {})
+    await markTwinStale(userId)
+    scheduleCoachEvaluate(userId, 'budget')
     return mapBudget(userId, budget)
   },
 
@@ -53,6 +57,8 @@ export const budgetsService = {
       alertAt: body.alertAt,
     })
     await checkBudgetAlerts(userId, budget.categoryId).catch(() => {})
+    await markTwinStale(userId)
+    scheduleCoachEvaluate(userId, 'budget')
     return mapBudget(userId, budget)
   },
 
@@ -61,6 +67,7 @@ export const budgetsService = {
     if (!existing) throw new AppError('Budget not found', 404)
 
     await budgetsRepository.delete(existing.id)
+    await markTwinStale(userId)
     return { id: existing.id, deleted: true }
   },
 }

@@ -1,6 +1,7 @@
 import { db } from '../../lib/prisma.js'
 import { transactionsRepository } from '../../modules/transactions/repository.js'
 import { checkBudgetAlerts } from '../../modules/budgets/alerts.js'
+import { markTwinStale } from '../../modules/ai/twin/invalidate.js'
 
 function startOfDay(d = new Date()) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
@@ -67,6 +68,7 @@ export async function processDueRecurring() {
         [],
       )
       created++
+      await markTwinStale(rule.userId)
 
       const sign = rule.type === 'income' ? '+' : '-'
       try {

@@ -5,6 +5,7 @@ const LOCK_KEYS = {
   'jobs:all': 720_001,
   'jobs:recurring': 720_002,
   'jobs:notifications': 720_003,
+  'jobs:ai': 720_004,
 }
 
 /**

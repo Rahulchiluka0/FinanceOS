@@ -3,7 +3,8 @@ import cors from 'cors'
 import morgan from 'morgan'
 import { env } from './config/index.js'
 import { errorHandler, notFound } from './middleware/error.js'
-import { ok } from './utils/response.js'
+import { ok, asyncHandler } from './utils/response.js'
+import { authRequired } from './middleware/auth.js'
 
 import authRoutes from './modules/auth/routes.js'
 import usersRoutes from './modules/users/routes.js'
@@ -25,6 +26,7 @@ import searchRoutes from './modules/search/routes.js'
 import reportsRoutes from './modules/reports/routes.js'
 import fxRoutes from './modules/fx/routes.js'
 import aiRoutes from './modules/ai/routes.js'
+import { aiController } from './modules/ai/controller.js'
 import dataRoutes from './modules/data/routes.js'
 import jobsRoutes from './modules/jobs/routes.js'
 
@@ -64,6 +66,7 @@ export function createApp() {
   app.use('/api/v1/reports', reportsRoutes)
   app.use('/api/v1/fx', fxRoutes)
   app.use('/api/v1/ai', aiRoutes)
+  app.get('/api/v1/insights/smart', authRequired, asyncHandler(aiController.smartInsights))
   app.use('/api/v1/data', dataRoutes)
   app.use('/api/v1/jobs', jobsRoutes)
 

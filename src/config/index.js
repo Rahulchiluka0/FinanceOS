@@ -13,6 +13,10 @@ export const env = {
    * off    — no automatic scheduling (manual POST /jobs/run only)
    */
   jobsMode: String(process.env.JOBS_MODE || 'inline').toLowerCase(),
+  aiProvider: String(process.env.AI_PROVIDER || 'none').toLowerCase(),
+  aiApiKey: process.env.AI_API_KEY || '',
+  aiModel: process.env.AI_MODEL || 'gemini-2.0-flash',
+  aiEnabled: String(process.env.AI_ENABLED || 'true').toLowerCase() !== 'false',
 }
 
 export const prisma = new PrismaClient()

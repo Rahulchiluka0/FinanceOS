@@ -1,5 +1,6 @@
 import { startOfMonth, endOfMonth, mapTransaction } from '../../utils/mappers.js'
 import { dashboardRepository } from './repository.js'
+import { getOrBuildTwin } from '../ai/twin/builder.js'
 
 export const dashboardService = {
   async getSummary(userId) {
@@ -28,7 +29,15 @@ export const dashboardService = {
     const loansRemaining = loans.reduce((s, l) => s + l.remaining, 0)
     const netWorth = totalBalance + investmentsValue - loansRemaining
     const savingRate = monthlyIncome > 0 ? Math.round((netSavings / monthlyIncome) * 100) : 0
-    const healthScore = Math.max(0, Math.min(100, 50 + savingRate))
+
+    // Health score v2 from Financial Twin (backward compatible field name)
+    let healthScore = Math.max(0, Math.min(100, 50 + savingRate))
+    try {
+      const { profile } = await getOrBuildTwin(userId)
+      if (profile?.health?.overall != null) healthScore = profile.health.overall
+    } catch (err) {
+      console.error('[dashboard-health]', err.message)
+    }
 
     const budgetProgress = await Promise.all(
       budgets.map(async (b) => {

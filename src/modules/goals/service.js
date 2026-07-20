@@ -1,4 +1,6 @@
 import { AppError } from '../../utils/response.js'
+import { markTwinStale } from '../ai/twin/invalidate.js'
+import { scheduleCoachEvaluate } from '../ai/coach/schedule.js'
 import { goalsRepository } from './repository.js'
 
 function mapGoal(g) {
@@ -30,6 +32,7 @@ export const goalsService = {
       color: body.color || '#1A56DB',
       completed: current >= body.targetAmount,
     })
+    await markTwinStale(userId)
     return mapGoal(goal)
   },
 
@@ -49,6 +52,7 @@ export const goalsService = {
       color: body.color,
       completed: current >= target,
     })
+    await markTwinStale(userId)
     return mapGoal(goal)
   },
 
@@ -57,6 +61,7 @@ export const goalsService = {
     if (!existing) throw new AppError('Goal not found', 404)
 
     await goalsRepository.delete(existing.id)
+    await markTwinStale(userId)
     return { id: existing.id, deleted: true }
   },
 
@@ -78,6 +83,8 @@ export const goalsService = {
         body: `${goal.name} reached its target!`,
       })
     }
+    await markTwinStale(userId)
+    scheduleCoachEvaluate(userId, 'goal')
     return mapGoal(goal)
   },
 
@@ -96,6 +103,7 @@ export const goalsService = {
       currentAmount: current,
       completed: current >= existing.targetAmount,
     })
+    await markTwinStale(userId)
     return mapGoal(goal)
   },
 }

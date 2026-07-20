@@ -35,6 +35,11 @@ model User {
   investments   Investment[]
   notifications Notification[]
   passwordResets PasswordResetToken[]
+  aiProfile      AiProfile?
+  aiInsights    AiInsight[]
+  aiPatterns    AiPattern[]
+  aiHealthScores AiHealthScore[]
+  aiChatThreads AiChatThread[]
 }
 
 model PasswordResetToken {
@@ -287,4 +292,92 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, read])
+}
+
+// --- AI Intelligence Suite (derived artifacts only; ledger remains SoT) ---
+
+model AiProfile {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  version   Int       @default(1)
+  profile   String    @default("{}")
+  stale     Boolean   @default(true)
+  builtAt   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AiInsight {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String
+  severity  String
+  title     String
+  body      String
+  fact      String    @default("{}")
+  action    String    @default("{}")
+  evidence  String    @default("[]")
+  status    String    @default("active")
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status, createdAt])
+}
+
+model AiPattern {
+  id        String   @id @default(cuid())
+  userId    String
+  key       String
+  period    String
+  payload   String   @default("{}")
+  summary   String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key, period])
+}
+
+model AiHealthScore {
+  id        String   @id @default(cuid())
+  userId    String
+  asOf      DateTime
+  overall   Int
+  factors   String   @default("{}")
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, asOf])
+}
+
+model AiChatThread {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages AiChatMessage[]
+
+  @@index([userId, updatedAt])
+}
+
+model AiChatMessage {
+  id        String   @id @default(cuid())
+  threadId  String
+  role      String
+  content   String
+  facts     String   @default("[]")
+  createdAt DateTime @default(now())
+
+  thread AiChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt])
 }

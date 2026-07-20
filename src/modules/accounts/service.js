@@ -1,6 +1,7 @@
 import { AppError } from '../../utils/response.js'
 import { assertCanDebit } from '../../utils/balance.js'
 import { mapAccount, parseAccountType } from '../../utils/mappers.js'
+import { markTwinStale } from '../ai/twin/invalidate.js'
 import { accountsRepository } from './repository.js'
 
 export const accountsService = {
@@ -22,6 +23,7 @@ export const accountsService = {
       color: body.color || '#1A56DB',
       currency: body.currency || 'INR',
     })
+    await markTwinStale(userId)
     return mapAccount(account)
   },
 
@@ -37,6 +39,7 @@ export const accountsService = {
       color: body.color,
       archived: body.archived,
     })
+    await markTwinStale(userId)
     return mapAccount(account)
   },
 
@@ -46,6 +49,7 @@ export const accountsService = {
     const account = await accountsRepository.update(existing.id, {
       archived: !existing.archived,
     })
+    await markTwinStale(userId)
     return mapAccount(account)
   },
 
@@ -69,6 +73,7 @@ export const accountsService = {
       notes: body.notes,
     })
 
+    await markTwinStale(userId)
     return { from: mapAccount(result.from), to: mapAccount(result.to) }
   },
 }

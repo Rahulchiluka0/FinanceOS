@@ -2,6 +2,8 @@ import { AppError } from '../../utils/response.js'
 import { mapTransaction } from '../../utils/mappers.js'
 import { db } from '../../lib/prisma.js'
 import { checkBudgetAlerts } from '../budgets/alerts.js'
+import { markTwinStale } from '../ai/twin/invalidate.js'
+import { scheduleCoachEvaluate } from '../ai/coach/schedule.js'
 import { transactionsRepository } from './repository.js'
 
 async function maybeBudgetAlert(userId, type, categoryId) {
@@ -98,6 +100,8 @@ export const transactionsService = {
       body.tags || [],
     )
     await maybeBudgetAlert(userId, created.type, created.categoryId)
+    await markTwinStale(userId)
+    scheduleCoachEvaluate(userId, created.type === 'income' ? 'income' : 'expense')
     return mapTransaction(created)
   },
 
@@ -128,6 +132,8 @@ export const transactionsService = {
     if (existing.categoryId && existing.categoryId !== updated.categoryId) {
       await maybeBudgetAlert(userId, 'expense', existing.categoryId)
     }
+    await markTwinStale(userId)
+    scheduleCoachEvaluate(userId, 'expense')
     return mapTransaction(updated)
   },
 
@@ -136,12 +142,14 @@ export const transactionsService = {
     if (!existing) throw new AppError('Transaction not found', 404)
 
     await transactionsRepository.deleteWithBalance(existing)
+    await markTwinStale(userId)
     return { id: existing.id, deleted: true }
   },
 
   async bulkRemove(userId, ids) {
     const rows = await transactionsRepository.findManyByIds(userId, ids)
     await transactionsRepository.bulkDeleteWithBalance(rows)
+    await markTwinStale(userId)
     return { deleted: rows.map((r) => r.id) }
   },
 
@@ -157,6 +165,8 @@ export const transactionsService = {
       existing.tags.map((t) => t.tag.name),
     )
     await maybeBudgetAlert(userId, created.type, created.categoryId)
+    await markTwinStale(userId)
+    scheduleCoachEvaluate(userId, 'expense')
     return mapTransaction(created)
   },
 
