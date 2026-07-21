@@ -8,6 +8,13 @@ const chatSchema = z.object({
   client: z.enum(['web', 'mobile']).optional(),
 })
 
+const simSchema = z.object({
+  template: z.string().min(1),
+  params: z.record(z.string(), z.union([z.number(), z.string(), z.boolean()])).optional(),
+  horizonMonths: z.number().int().min(6).max(60).optional(),
+  save: z.boolean().optional(),
+})
+
 export const aiController = {
   async suggestions(req, res) {
     const data = await aiService.getSuggestions(req.user.id)
@@ -86,6 +93,48 @@ export const aiController = {
 
   async smartInsights(req, res) {
     const data = await aiService.getSmartInsights(req.user.id)
+    return ok(res, data)
+  },
+
+  async goalRecommendations(req, res) {
+    const refresh = req.query.refresh === '1' || req.query.refresh === 'true'
+    const data = await aiService.getGoalRecommendations(req.user.id, { refresh })
+    return ok(res, data)
+  },
+
+  async refreshGoalRecommendations(req, res) {
+    const data = await aiService.refreshGoalRecommendations(req.user.id)
+    return ok(res, data)
+  },
+
+  async acceptGoalRecommendation(req, res) {
+    const data = await aiService.acceptGoalRecommendation(req.user.id, req.params.id)
+    return ok(res, data)
+  },
+
+  async dismissGoalRecommendation(req, res) {
+    const data = await aiService.dismissGoalRecommendation(req.user.id, req.params.id)
+    return ok(res, data)
+  },
+
+  async simTemplates(req, res) {
+    const data = await aiService.listSimTemplates()
+    return ok(res, data)
+  },
+
+  async runSimulation(req, res) {
+    const body = simSchema.parse(req.body)
+    const data = await aiService.runSimulation(req.user.id, body)
+    return ok(res, data)
+  },
+
+  async listSimulations(req, res) {
+    const data = await aiService.listSimulations(req.user.id)
+    return ok(res, data)
+  },
+
+  async replay(req, res) {
+    const data = await aiService.getReplay(req.user.id, req.query)
     return ok(res, data)
   },
 }

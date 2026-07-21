@@ -9,6 +9,14 @@ import {
   actInsight,
 } from './coach/evaluate.js'
 import { askMyMoney, listThreads, getThread } from './chat/orchestrate.js'
+import {
+  listGoalRecommendations,
+  acceptGoalRecommendation,
+  dismissGoalRecommendation,
+  buildGoalRecommendations,
+} from './goals/recommendations.js'
+import { runSimulation, listSimulations, listTemplates } from './simulator/engine.js'
+import { getMoneyReplay } from './replay/builder.js'
 
 const refreshCooldownMs = 30_000
 const lastRefreshByUser = new Map()
@@ -76,7 +84,7 @@ export const aiService = {
 
   async getHealthScore(userId) {
     const { profile, builtAt, stale } = await getOrBuildTwin(userId)
-    const history = await getHealthHistory(userId, 12)
+    const history = await getHealthHistory(userId, 30)
     return {
       overall: profile.health.overall,
       factors: profile.health.factors,
@@ -179,5 +187,51 @@ export const aiService = {
       : await listInsights(userId, { status: 'active', limit: 20 })
     const patterns = await listPatterns(userId)
     return { insights: fresh, patterns: patterns.patterns, period: patterns.period }
+  },
+
+  async getGoalRecommendations(userId, { refresh = false } = {}) {
+    return listGoalRecommendations(userId, { refresh })
+  },
+
+  async refreshGoalRecommendations(userId) {
+    return buildGoalRecommendations(userId)
+  },
+
+  async acceptGoalRecommendation(userId, id) {
+    const data = await acceptGoalRecommendation(userId, id)
+    if (!data) throw new AppError('Recommendation not found', 404)
+    return data
+  },
+
+  async dismissGoalRecommendation(userId, id) {
+    const row = await dismissGoalRecommendation(userId, id)
+    if (!row) throw new AppError('Recommendation not found', 404)
+    return row
+  },
+
+  async listSimTemplates() {
+    return listTemplates()
+  },
+
+  async runSimulation(userId, body) {
+    try {
+      return await runSimulation(userId, body)
+    } catch (err) {
+      if (err.status) throw new AppError(err.message, err.status, err.code || 'APP_ERROR')
+      throw err
+    }
+  },
+
+  async listSimulations(userId) {
+    return listSimulations(userId)
+  },
+
+  async getReplay(userId, query = {}) {
+    return getMoneyReplay(userId, {
+      period: query.period,
+      from: query.from,
+      to: query.to,
+      force: query.force === '1' || query.force === 'true',
+    })
   },
 }

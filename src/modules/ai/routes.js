@@ -24,4 +24,15 @@ router.post('/insights/refresh', asyncHandler(aiController.refreshCoach))
 router.post('/insights/:id/dismiss', asyncHandler(aiController.dismissInsight))
 router.post('/insights/:id/act', asyncHandler(aiController.actInsight))
 
+router.get('/recommendations/goals', asyncHandler(aiController.goalRecommendations))
+router.post('/recommendations/goals/refresh', asyncHandler(aiController.refreshGoalRecommendations))
+router.post('/recommendations/goals/:id/accept', asyncHandler(aiController.acceptGoalRecommendation))
+router.post('/recommendations/goals/:id/dismiss', asyncHandler(aiController.dismissGoalRecommendation))
+
+router.get('/simulations/templates', asyncHandler(aiController.simTemplates))
+router.get('/simulations', asyncHandler(aiController.listSimulations))
+router.post('/simulations', asyncHandler(aiController.runSimulation))
+
+router.get('/replay', asyncHandler(aiController.replay))
+
 export default router

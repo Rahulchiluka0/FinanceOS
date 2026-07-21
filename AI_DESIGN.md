@@ -767,11 +767,12 @@ When `AI_PROVIDER=none`, chat still answers via **template narration over tool f
 - Thread history (`AiChatThread` / `AiChatMessage`).  
 - Retire stub tips UX (web + mobile fact pills + suggestion chips).
 
-### Phase D — Goals + Replay + Simulator (2–3 weeks)
+### Phase D — Goals + Replay + Simulator (2–3 weeks) ✅ implemented
 
-- Goal recommendations → create goal.  
-- Monthly replay.  
-- Life Simulator templates + charts.
+- Goal recommendations → create goal (`GET/POST /ai/recommendations/goals*`).  
+- Monthly Money Replay (`GET /ai/replay`).  
+- Life Simulator templates + charts (`POST/GET /ai/simulations`).  
+- Web + mobile: Goal Planner, Replay, Simulator screens.
 
 ### Phase E — Polish
 

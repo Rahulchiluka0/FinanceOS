@@ -40,6 +40,9 @@ model User {
   aiPatterns    AiPattern[]
   aiHealthScores AiHealthScore[]
   aiChatThreads AiChatThread[]
+  aiGoalRecommendations AiGoalRecommendation[]
+  aiSimulations AiSimulation[]
+  aiMonthlyReplays AiMonthlyReplay[]
 }
 
 model PasswordResetToken {
@@ -380,4 +383,50 @@ model AiChatMessage {
   thread AiChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
 
   @@index([threadId, createdAt])
+}
+
+model AiGoalRecommendation {
+  id           String   @id @default(cuid())
+  userId       String
+  title        String
+  targetAmount Float
+  monthly      Float
+  etaMonths    Int
+  confidence   Int
+  priority     Int
+  rationale    String
+  status       String   @default("suggested")
+  templateKey  String?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+}
+
+model AiSimulation {
+  id        String   @id @default(cuid())
+  userId    String
+  template  String
+  params    String   @default("{}")
+  result    String   @default("{}")
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model AiMonthlyReplay {
+  id        String   @id @default(cuid())
+  userId    String
+  period    String
+  timeline  String   @default("[]")
+  summary   String   @default("")
+  stats     String   @default("{}")
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, period])
 }
